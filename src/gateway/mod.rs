@@ -22,12 +22,12 @@ const API_VERSION: u32 = 10;
 const DISCORD_WEBSOCKET_URL: &str =
     formatcp!("wss://gateway.discord.gg/?v={}&encoding=json", API_VERSION);
 
-pub struct Gateway {
+pub struct Gateway<'a> {
     socket: WebSocketStream<MaybeTlsStream<TcpStream>>,
-    command_queue: Vec<Command>,
+    command_queue: Vec<Command<'a>>,
     heartbeat_interval: u32,
 }
-impl Gateway {
+impl Gateway<'_> {
     pub async fn connect() -> Self {
         let (mut socket, _) = connect_async(Url::parse(DISCORD_WEBSOCKET_URL).unwrap())
             .await
@@ -99,7 +99,7 @@ impl Gateway {
                     }
                     Command::Identity { intents, token } => {
                         let intents =
-                            Intent::calculate_intent_bitfield(Box::new(intents.into_iter()));
+                            Intent::calculate_intent_bitfield(intents.into_iter());
                         let mut d = serde_json::Map::<_, _>::new();
                         d.insert("token".to_string(), Value::String(token));
                         d.insert("intents".to_string(), Value::Number(Number::from(intents)));
@@ -199,7 +199,7 @@ impl Gateway {
             _ => println!("Received strange event type from websocket: {:#?}", packet),
         }
     }
-    pub fn authenticate(&mut self, token: &str, intents: Vec<Intent>) {
+    pub fn authenticate(&mut self, token: &str, intents: &[Intent]) {
         self.command_queue.push(Command::Identity {
             token: token.to_string(),
             intents,

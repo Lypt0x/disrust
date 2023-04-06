@@ -23,9 +23,9 @@ pub enum Event {
     InvalidSession,
 }
 #[derive(Debug)]
-pub enum Command {
+pub enum Command<'a> {
     HeartBeat,
-    Identity { token: String, intents: Vec<Intent> },
+    Identity { token: String, intents: &'a [Intent] },
 }
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[allow(unused)]
@@ -56,7 +56,7 @@ impl Hash for Intent {
     }
 }
 impl Intent {
-    pub fn calculate_intent_bitfield(intents: Box<dyn Iterator<Item = Self>>) -> u32 {
+    pub fn calculate_intent_bitfield(intents: impl Iterator<Item = &Self>) -> u32 {
         let mut result = 0u32;
         for intent in intents {
             result |= intent.get_bit();
